@@ -1,0 +1,154 @@
+options:
+	prefix: &8[&dMinigame&8] &f
+	noPerms: &cYou don't have permission to do that.
+	
+on script load:
+	delete {minigame::disasters::*}
+	set {_dis::*} to "tnt", "pufferfish", "zombie", "lightning", "lava", "pvp" and "anvil"
+	loop {_dis::*}:
+		add loop-value to {minigame::disasters::*}
+		if loop-value = "tnt":
+			set {minigame::disasters::%loop-value%::item} to "tnt block"
+		else if loop-value = "pufferfish":
+			set {minigame::disasters::%loop-value%::item} to "pufferfish"
+		else if loop-value = "anvil":
+			set {minigame::disasters::%loop-value%::item} to "unbroken anvil"
+		else if loop-value = "zombie":
+			set {minigame::disasters::%loop-value%::item} to "zombie head item"
+		else if loop-value = "lightning":
+			set {minigame::disasters::%loop-value%::item} to "lightning rod"
+		else if loop-value = "pvp":
+			set {minigame::disasters::%loop-value%::item} to "diamond sword"
+		else if loop-value = "lava":
+			set {minigame::disasters::%loop-value%::item} to "lava bucket"
+
+command /vote:
+	trigger:
+		if {minigame::game::status} = "starting":
+			if {minigame::cooldown} > 5:
+				voteGUI(player)
+			else:
+				send "{@prefix}Voting has ended, you can no longer vote."
+		else if {minigame::game::status} = "cooldown":
+			send "{@prefix}You cannot vote while the game is on cooldown."
+			stop
+		else:
+			if {minigame::game::status} = "started":
+				send "{@prefix}The game has already started."
+				stop
+			send "{@prefix}Waiting for more players."
+	
+function startVoting():
+	if size of {minigame::maps::*} < 3:
+		broadcast "{@prefix}An error occurred while starting a vote. Contact an administrator."
+		stop
+	selectMaps()
+	selectDisasters()
+	#set {_disasters::*} to ""
+	#loop {minigame::maps::*}:
+		#add loop-value to {_maps::*}
+	#loop {minigame::disasters::*}:
+		#add loop-value to {_disasters::*}
+	#loop 3 times:
+		#set {_selected} to random element out of {_maps::*}
+		#add {_selected} to {selectedMaps::*}
+		##set {selectedMaps::%{_selected}%} to 0
+		#remove {_selected} from {_maps::*}
+		
+		#set {_selected} to random element out of {_disasters::*}
+		#add {_selected} to {selectedDisaster::*}
+		##set {selectedDisaster::%{_selected}%} to 0
+		#remove {_selected} from {_disasters::*}
+	broadcast "{@prefix}Vote for a map and a disaster using /vote."
+	
+function selectMaps():
+	if size of {selectedMaps::*} is 3:
+		stop
+	set {_map} to random element out of {minigame::maps::*}
+	if {selectedMaps::*} does not contain {_map}:
+		add {_map} to {selectedMaps::*}
+	selectMaps()
+		
+function selectDisasters():
+	if size of {selectedDisaster::*} is 3:
+		stop
+	set {_disaster} to random element out of {minigame::disasters::*}
+	if {selectedDisaster::*} does not contain {_disaster}:
+		add {_disaster} to {selectedDisaster::*}
+	selectDisasters()
+	
+function voteGUI(p: player):
+	set metadata tag "minigameMapVoteGUI" of {_p} to chest inventory with 4 rows named "Select map & Disaster"
+	set {_g} to metadata tag "minigameMapVoteGUI" of {_p}
+	set {_n} to 11
+	set {_n2} to 20
+	loop 3 times:
+		set {_name} to {selectedMaps::%loop-number%}
+		if {mapVoted::%uuid of {_p}%} is {_name}:
+			set {_i} to {minigame::maps::%{_name}%::item}
+			enchant {_i} with sharpness
+			set {_i} to {_i} with hide enchants item flag
+			set slot {_n} of {_g} to {_i} named "&dMap&8: &f%{_name}%" with lore "&bVotes&8: &f%{selectedMapVotes::%{_name}%} ? 0%"
+		else: 
+			set slot {_n} of {_g} to {minigame::maps::%{_name}%::item} named "&dMap&8: &f%{_name}%" with lore "&bVotes&8: &f%{selectedMapVotes::%{_name}%} ? 0%"
+		set {_name} to {selectedDisaster::%loop-number%}
+		if {disasterVoted::%uuid of {_p}%} is {_name}:
+			set {_i} to {minigame::disasters::%{_name}%::item} parsed as itemtype
+			enchant {_i} with sharpness
+			set {_i} to {_i} with hide enchants item flag
+			set slot {_n2} of {_g} to {_i} named "&dDisaster&8: &f%{_name}%" with lore "&bVotes&8: &f%{selectedDisasterVotes::%{_name}%} ? 0%"
+		else: 
+			set {_i} to ({minigame::disasters::%{_name}%::item} parsed as itemtype)
+			set slot {_n2} of {_g} to {_i} named "&dDisaster&8: &f%{_name}%" with lore "&bVotes&8: &f%{selectedDisasterVotes::%{_name}%} ? 0%"
+		add 2 to {_n}
+		add 2 to {_n2}
+	open {_g} for {_p}
+	
+function endVoting():
+	delete {selectedMaps::*}
+	delete {selectedMapVotes::*}
+	delete {mapVoted::*}
+	delete {selectedDisaster::*}
+	delete {selectedDisasterVotes::*}
+	delete {disasterVoted::*}
+	#delete {minigame::disasterWon}
+	#delete {minigame::mapWon}
+	loop all players:
+		if loop-player's current inventory = metadata tag "minigameMapVoteGUI" of loop-player:
+			close loop-player's inventory
+		
+on inventory click:
+	if event-inventory = metadata tag "minigameMapVoteGUI" of player:
+		cancel event
+		if event-item is not air:
+			set {_name::*} to uncolored name of event-item split at ": "
+			set {_typeOfVote} to uncolored {_name::1} in lower case 
+			set {_name} to {_name::2}
+			if {_typeOfVote} = "map":
+				if {mapVoted::%uuid of player%} != {_name}:
+					set {_previous} to {mapVoted::%uuid of player%}
+					remove 1 from {selectedMapVotes::%{_previous}%}
+					add 1 to {selectedMapVotes::%{_name}%}
+					set {mapVoted::%uuid of player%} to {_name}
+					#voteGUI(player)
+					close player's inventory
+					send "{@prefix}You have successfully voted for map &b%{_name}%&f."
+					loop all players:
+						if loop-player's current inventory = metadata tag "minigameMapVoteGUI" of loop-player:
+							voteGUI(loop-player)
+				else:
+					send "{@prefix}You have already voted for this map."
+			else if {_typeOfVote} = "disaster":
+				if {disasterVoted::%uuid of player%} != {_name}:
+					set {_previous} to {disasterVoted::%uuid of player%}
+					remove 1 from {selectedDisasterVotes::%{_previous}%}
+					add 1 to {selectedDisasterVotes::%{_name}%}
+					set {disasterVoted::%uuid of player%} to {_name}
+					#voteGUI(player)
+					close player's inventory
+					send "{@prefix}You have successfully voted for disaster &b%{_name}%&f."
+					loop all players:
+						if loop-player's current inventory = metadata tag "minigameMapVoteGUI" of loop-player:
+							voteGUI(loop-player)
+				else:
+					send "{@prefix}You have already voted for this disaster."

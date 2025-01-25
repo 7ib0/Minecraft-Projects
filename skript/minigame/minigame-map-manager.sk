@@ -1,0 +1,113 @@
+options:
+	prefix: &8[&dMinigame&8] &7
+	noPerms: &cYou don't have permission to do that.
+	
+command /minigamemap [<text>] [<text>]:
+	aliases: minigmap, minimap, mmap
+	trigger:
+		if player does not have permission "minigame.admin":
+			send "{@prefix}{@noPerms}"
+			stop
+		if arg-1 is not set:
+			send "{@prefix}You must provide an argument."
+			stop
+		if arg-1 is "wand":
+			set {_wand} to netherite axe named "&dMinigame Map Select Wand" with lore "", "&aLEFT-CLICK &7to select position 1" and "&aRIGHT-CLICK &7to select position 2"
+			give player {_wand}
+		if arg-1 is "create" or "add":
+			if arg-2 is not set:
+				send "{@prefix}You must provide a name for the map to create."
+				stop
+			if {minigame::maps::*} contains uncolored arg-2 in lowercase:
+				send "{@prefix}A map with that name already exists."
+				stop
+			if {minigameMap::%uuid of player%::pos1} is not set:
+				send "{@prefix}You must make a region selection first using map select wand. Use command /mmap wand to give yourself a wand."
+				stop
+			if {minigameMap::%uuid of player%::pos2} is not set:
+				send "{@prefix}You must make a region selection first using map select wand. Use command /mmap wand to give yourself a wand."
+				stop
+			createMap("minigame-map-%uncolored arg-2 in lowercase%", {minigameMap::%uuid of player%::pos1}, {minigameMap::%uuid of player%::pos2})
+			add uncolored arg-2 in lower case to {minigame::maps::*}
+			send "{@prefix}New map named &e%uncolored arg-2 in lower case% &7has been created."
+		else if arg-1 is "delete" or "remove":
+			if arg-2 is not set:
+				send "{@prefix}You must provide a name for the map to delete."
+				stop
+			if {minigame::maps::*} does not contain uncolored arg-2 in lowercase:
+				send "{@prefix}A map with that name does not exist."
+				stop
+			remove (uncolored arg-2 in lowercase) from {minigame::maps::*}
+			deleteMap(uncolored arg-2 in lowercase)
+			send "{@prefix}Removed map &e%uncolored arg-2 in lowercase%&7."
+		else if arg-1 is "test":
+			if arg-2 is not set:
+				send "{@prefix}Please provide the name of map you want to test."
+				stop
+			if {minigame::maps::*} does not contain uncolored arg-2 in lowercase:
+				send "{@prefix}A map with that name does not exist."
+				stop
+			send "{@prefix}Pasting map %arg-2% at your location."
+			set {_s} to structure named "minigame-map-%arg-2%"
+			place structure {_s} at player
+		else if arg-1 is "get-item" or "give-item":
+			if arg-2 is not set:
+				send "{@prefix}You must provide a name of map whose item you want to get."
+				stop
+			if {minigame::maps::*} does not contain uncolored arg-2 in lower case:
+				send "{@prefix}A map with that name does not exist"
+				stop
+			if {minigame::maps::%uncolored arg-2 in lower case%::item} is not set:
+				send "{@prefix}You have not set an item for the map."
+				stop
+			set {_i} to {minigame::maps::%uncolored arg-2 in lower case%::item}
+			give player {_i}
+			send "{@prefix}You have been given &b%{_i}%"		
+		else if arg-1 is "set-item":
+			if arg-2 is not set:
+				send "{@prefix}You must provide a name of map whose item you want to set."
+				stop
+			if {minigame::maps::*} does not contain uncolored arg-2 in lower case:
+				send "{@prefix}A map with that name does not exist"
+				stop
+			if player's tool is air:
+				send "{@prefix}You must hold an item in your hand."
+				stop
+			set {_i} to player's tool
+			set {minigame::maps::%uncolored arg-2 in lower case%::item} to {_i}
+			send "{@prefix}You have set &b%{_i}% &7as an item for map &b%arg-2 in lower case%"
+		else if arg-1 is "list":
+			send "&bMinigame Map List&8:"
+			loop {minigame::maps::*}:
+				send "&8  • &e%loop-value%"
+			
+function createMap(n: text, loc1: location, loc2: location):
+	save structure {_n}
+	set {_n} to structure named "%{_n}%"
+	fill structure {_n} between {_loc1} and {_loc2}
+	save structure {_n}
+	
+function deleteMap(n: text):
+	set {_n} to structure named "minigame-map-%{_n}%"
+	delete structure {_n}
+	
+on left click:
+	if event-block is set:
+		if player's tool is netherite axe named "&dMinigame Map Select Wand":
+			cancel event
+			if {minigameMap::%uuid of player%::pos1} is not location of event-block:
+				set {_pos} to "&e%x-pos of event-block%&8, &e%y-pos of event-block%&8, &e%z-pos of event-block%"
+				set {minigameMap::%uuid of player%::pos1} to location of event-block
+				send "{@prefix}Map creation position 1 set at %{_pos}%" to player
+			
+on right click:
+	if event-block is set:
+		if player's tool is netherite axe named "&dMinigame Map Select Wand":
+			cancel event
+			if {minigameMap::%uuid of player%::pos2} is not location of event-block:
+				set {_pos} to "&e%x-pos of event-block%&8, &e%y-pos of event-block%&8, &e%z-pos of event-block%"
+				set {minigameMap::%uuid of player%::pos2} to location of event-block
+				send "{@prefix}Map creation position 2 set at %{_pos}%" to player
+
+on disconnect:
+	delete {minigameMap::%uuid of player%::*}

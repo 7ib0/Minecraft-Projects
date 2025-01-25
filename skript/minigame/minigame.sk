@@ -1,0 +1,475 @@
+options:
+	prefix: &8[&dMinigame&8] &7
+	noPerms: &cYou don't have permission to do that.
+	
+	# Grave time period. For how long to wait before the disaster strikes. In seconds
+	# Default: 10 (10 seconds)
+	gracePeriod: 10
+	# Game time period. For how long the game will last. In seconds
+	# Default: 180 (3 minutes)
+	gameTimePeriod: 180
+
+function startMinigame():
+	if {minigame::game::status} = "started":
+		loop {minigame::queue::*}:
+			remove loop-value from {minigameBossBar}
+			clearChat(loop-value)
+			play sound "entity.generic.explode" for loop-value
+			add loop-value to {minigame::ingame::*}
+		delete {minigame::queue::*}
+		broadcast "{@prefix}Game has started!"
+		broadcast "&6Map&8: &f%{minigame::mapWon}%"
+		broadcast "&cDisaster&8: &f%{minigame::disasterWon}%"
+		pasteMap({minigame::mapWon})
+		gameStart()
+		
+function playStartingSound():
+	loop {minigame::queue::*}:
+		play sound "block.note_block.pling" for loop-value
+		
+function clearChat(p: player):
+	loop 300 times:
+		send " " to {_p}
+		
+function pasteMap(map: text):
+	set {_s} to structure named "minigame-map-%{_map}%"
+	set {_loc} to location(-23,60,-17,world "boxpvp")
+	set {_spawn::*} to blockstates of structure {_s}
+	place structure {_s} at {_loc}
+	set {minigame::loc1} to {_loc}
+	loop {_spawn::*}:
+		set {_data} to blockstate blockdata of loop-value
+		if {_data} = diamond block[]:
+			set {_vect} to blockstate offset of loop-value
+			exit loop
+	set {_locTp} to {_loc} ~~ {_vect}
+	set {minigame::spawn} to block above block above {_locTp}
+	loop {minigame::ingame::*}:
+		set loop-value's gamemode to adventure
+		teleport loop-value to {minigame::spawn}
+	set {minigame::loc2} to {_loc} ~~ structure size of {_s}
+	
+function gameStart():
+	if {minigameStartedBoosBar} is not set:
+		set {minigameStartedBoosBar} to boss bar with id "minigameStartedBoosBar" with title "&aA disaster is going to strike in 10 seconds" with color pink with progress 100
+		set bar style of {minigameStartedBoosBar} to solid bar
+		set bar color of {minigameStartedBoosBar} to red
+	set bar color of {minigameStartedBoosBar} to red
+	set {minigame::ingametime} to {@gracePeriod}
+	set {minigame::grace} to true
+	loop {minigame::ingame::*}:
+		add loop-value to {minigameStartedBoosBar}
+	bossBarIngameCounter()
+	
+function bossBarIngameCounter():
+	wait a second
+	set {_max} to {minigame::ingametime}*20
+	set {_min} to {minigame::ingametime}*20
+	set {_n} to 0
+	while {minigame::game::status} is "started":
+		if {minigame::grace} is true:
+			if {minigame::ingametime} = 0:
+				bossBarIngameCounterNoGrace()
+				strikeDisaster()
+				set {minigame::grace} to false
+			if {_n} = 20:
+				subtract 1 from {minigame::ingametime}
+				if {minigame::ingametime} < 5:
+					playStartingSound()
+				set {_n} to 0
+			else:
+				add 1 to {_n}
+			if size of {minigame::ingame::*} = 1:
+				endMinigame()
+				exit loop
+			subtract 1 from {_min}
+			set {_percent} to rounded up {_min}/{_max} * 100
+			set bar title of {minigameStartedBoosBar} to "&aA disaster is going to strike in &e%{minigame::ingametime}%"
+			set bar progress of {minigameStartedBoosBar} to {_percent}
+		wait a tick
+		
+function bossBarIngameCounterNoGrace():
+	set {minigame::ingametime} to {@gameTimePeriod}
+	set {_max} to {minigame::ingametime}*20
+	set {_min} to {minigame::ingametime}*20
+	set {_n} to 0
+	while {minigame::game::status} = "started":
+		if {minigame::ingametime} = 0:
+			endMinigame()
+			exit loop
+		if {_n} = 20:
+			subtract 1 from {minigame::ingametime}
+			if {minigame::ingametime} < 5:
+				playStartingSound()
+				set bar color of {minigameStartedBoosBar} to green
+			set {_n} to 0
+		else:
+			add 1 to {_n}
+		subtract 1 from {_min}
+		set {_percent} to rounded up {_min}/{_max} * 100
+		if size of {minigame::ingame::*} = 1:
+			endMinigame()
+			exit loop
+		else if size of {minigame::ingame::*} = 0:
+			endMinigame()
+			exit loop
+		else if {minigame::ingame::*} is not set:
+			endMinigame()
+			exit loop
+		set {_time} to "%{minigame::ingametime}% seconds" parsed as time span
+		set bar title of {minigameStartedBoosBar} to "&aDisaster will end in &e%{_time}%"
+		set bar progress of {minigameStartedBoosBar} to {_percent}
+		wait a tick
+		
+function endMinigame():
+	set {minigame::game::status} to "cooldown"
+	delete {minigame::ingametime}
+	delete {minigame::mapWon}
+	delete {minigame::disasterWon}
+	broadcast "{@prefix}The game has ended with &a%size of {minigame::ingame::*} ? 0%&7 winner(s).%nl%&e%{minigame::ingame::*}%"
+	set {minigame::lastgametime} to now
+	set {showLobbyBossBar} to true
+	startMinigameCountdown()
+	showBossBar()
+	loop {minigame::ingame::*}:
+		set {_player} to ("%loop-value%" parsed as player)
+		add 1 to {minigamesWon::%uuid of {_player}%}
+		add 1 to {minigamesWinStreak::%uuid of {_player}%}
+		send "{@prefix}You won the game" to loop-value
+		giveWinShards(loop-value)
+		remove loop-value from {minigame::ingame::*}
+		remove loop-value from {minigameStartedBoosBar}
+		teleport loop-value to location(10214.5, 78, 10078.5, world "boxpvp")
+		if loop-value has unbreakable wood sword named "&cSword":
+			remove unbreakable wood sword named "&cSword" from loop-value's inventory
+		healPlayer(loop-value)
+	loop {minigame::inspectate::*}:
+		remove loop-value from {minigame::inspectate::*}
+		remove loop-value from {minigameStartedBoosBar}
+		teleport loop-value to location(10214.5, 78, 10078.5, world "boxpvp")
+		set loop-value's gamemode to adventure
+		if loop-value has unbreakable wood sword named "&cSword":
+			remove unbreakable wood sword named "&cSword" from loop-value's inventory
+		healPlayer(loop-value)
+	delete {minigame::ingame::*}
+	delete {minigame::spawn}
+	wait 5 seconds
+	resetMap({minigame::loc1},{minigame::loc2})
+	
+function spectateGame(p: player):
+	if {minigame::ingame::*} contains {_p}:
+		if {spectateConfirm::%uuid of {_p}%} is not set:
+			send "{@prefix}Are you sure you want to leave the game? Use the spectate command again within &c10 seconds&7 to leave and spectate the game." to {_p}
+			set {spectateConfirm::%uuid of {_p}%} to true
+			wait 10 seconds
+			if {spectateConfirm::%uuid of {_p}%} is set:
+				delete {spectateConfirm::%uuid of {_p}%}
+		else:
+			delete {spectateConfirm::%uuid of {_p}%}
+			remove {_p} from {minigame::ingame::*}
+			add {_p} to {minigame::inspectate::*}
+			if {minigame::game::status} = "started":
+				set {_p}'s gamemode to spectator
+				teleport {_p} to {minigame::spawn}
+				send "{@prefix}You are now spectating the game." to {_p}
+				add {_p} to {minigameStartedBoosBar}
+	else:
+		if {minigame::game::status} = "started":
+			if {minigame::inspectate::*} contains {_p}:
+				teleport {_p} to location(-6,145,-4, world "boxpvp")
+				remove {_p} from {minigame::inspectate::*}
+				remove {_p} from {minigameStartedBoosBar}
+				send "{@prefix}You are no longer spectating the game." to {_p}
+				set {_p}'s gamemode to adventure
+			else:
+				set {_p}'s gamemode to spectator
+				add {_p} to {minigame::inspectate::*}
+				add {_p} to {minigameStartedBoosBar}
+				#teleport {_p} to {minigame::spawn}
+	
+function removePlayerFromGame(p: player):
+	if {minigame::ingame::*} contains {_p}:
+		remove {_p} from {minigame::ingame::*}
+		remove {_p} from {minigameStartedBoosBar}
+		add 1 to {minigamesLost::%uuid of {_p}%}
+		set {minigamesWinStreak::%uuid of {_p}%} to 0
+		teleport {_p} to location(10214.5, 78, 10078.5, world "boxpvp")
+
+function giveWinShards(p: player):
+	if {_p} has permission "minigame.multiplier.3":
+		add 3 to {shards::%uuid of {_p}%}
+		send "{@prefix}You received 3 shards." to {_p}
+	else if {_p} has permission "minigame.multiplier.2.5":
+		add 2.5 to {shards::%uuid of {_p}%}
+		send "{@prefix}You received 2.5 shards." to {_p}
+	else if {_p} has permission "minigame.multiplier.2":
+		add 2 to {shards::%uuid of {_p}%}
+		send "{@prefix}You received 2 shards." to {_p}
+	else if {_p} has permission "minigame.multiplier.1.5":
+		add 1.5 to {shards::%uuid of {_p}%}
+		send "{@prefix}You received 1.5 shards." to {_p}
+	else:
+		add 1 to {shards::%uuid of {_p}%}
+		send "{@prefix}You received a shard." to {_p}
+		
+on leave:
+	if {minigame::ingame::*} contains player:
+		removePlayerFromGame(player)
+
+#on death:
+#	victim is a player
+#	if {minigame::ingame::*} contains victim:
+#		removePlayerFromGame(victim)
+#		spectateGame(victim)
+		
+on respawn:
+	if {minigame::ingame::*} contains player:
+		set respawn location to {minigame::spawn}
+		removePlayerFromGame(player)
+		spectateGame(player)
+
+function resetMap(loc1: location, loc2: location):
+	loop all blocks within {_loc1} and {_loc2}:
+		if {_y} is not set:
+			set {_y} to y-pos of loop-block
+		else if {_y} is not equal to y-pos of loop-block:
+			set {_y} to y pos of loop-block
+			wait a tick
+		set loop-block to air
+	delete {minigame::loc1}
+	delete {minigame::loc2}
+		
+function strikeDisaster():
+	set {_disaster} to {minigame::disasterWon}
+	set {_loc1} to {minigame::loc1}
+	set {_loc2} to {minigame::loc2}
+	if {_disaster} = "anvil":
+		set {_speed} to 4 seconds
+		set {_x} to x-pos of {_loc1}
+		set {_y} to y-pos of {_loc2}
+		set {_z} to z-pos of {_loc1}
+		set {_loc1} to location({_x},{_y},{_z}, world "%world of {_loc1}%")
+		set {_phase} to 1
+		while {minigame::game::status} = "started":
+			set {_timer} to {minigame::ingametime}
+			if {_timer} < (({@gameTimePeriod}/100) * 50):
+				if {_phase} < 2:
+					broadcast "{@prefix}Phase 2"
+					set {_speed} to 2 seconds
+					set {_phase} to 2
+			if {_timer} < (({@gameTimePeriod}/100) * 10):
+				if {_phase} < 3:
+					broadcast "{@prefix}End phase"
+					set {_speed} to 1 seconds
+					set {_phase} to 3
+			loop all blocks within {_loc1} and {_loc2}:
+				chance of 12%:
+					set loop-block to southward unbroken anvil
+			wait {_speed}
+	else if {_disaster} = "pufferfish":
+		set {_speed} to 4 seconds
+		set {_x} to x-pos of {_loc1}
+		set {_y} to y-pos of {_loc2}
+		set {_z} to z-pos of {_loc1}
+		set {_loc1} to location({_x},{_y},{_z}, world "%world of {_loc1}%")
+		set {_phase} to 1
+		while {minigame::game::status} = "started":
+			set {_timer} to {minigame::ingametime}
+			if {_timer} < (({@gameTimePeriod}/100) * 50):
+				if {_phase} < 2:
+					broadcast "{@prefix}Phase 2"
+					set {_speed} to 2 seconds
+					set {_phase} to 2
+			if {_timer} < (({@gameTimePeriod}/100) * 10):
+				if {_phase} < 3:
+					broadcast "{@prefix}End phase"
+					set {_speed} to 1 seconds
+					set {_phase} to 3
+			set {_amountSpawned} to 0
+			loop all blocks within {_loc1} and {_loc2}:
+				chance of 6%:
+					summon puffer fish at location of loop-block
+			wait {_speed}
+	else if {_disaster} = "tnt":
+		set {_speed} to 4 seconds
+		set {_x} to x-pos of {_loc1}
+		set {_y} to y-pos of {_loc2}
+		set {_z} to z-pos of {_loc1}
+		set {_loc1} to location({_x},{_y},{_z}, world "%world of {_loc1}%")
+		set {_phase} to 1
+		while {minigame::game::status} = "started":
+			set {_timer} to {minigame::ingametime}
+			if {_timer} < (({@gameTimePeriod}/100) * 50):
+				if {_phase} < 2:
+					broadcast "{@prefix}Phase 2"
+					set {_speed} to 2 seconds
+					set {_phase} to 2
+			if {_timer} < (({@gameTimePeriod}/100) * 10):
+				if {_phase} < 3:
+					broadcast "{@prefix}End phase"
+					set {_speed} to 1 seconds
+					set {_phase} to 3
+			set {_amountSpawned} to 0
+			loop all blocks within {_loc1} and {_loc2}:
+				chance of 1%:
+					summon falling tnt at location of loop-block
+			wait {_speed}
+	else if {_disaster} = "zombie":
+		set {_speed} to 12 seconds
+		set {_x} to x-pos of {_loc1}
+		set {_y} to y-pos of {_loc2}
+		set {_z} to z-pos of {_loc1}
+		set {_loc1} to location({_x},{_y},{_z}, world "%world of {_loc1}%")
+		set {_phase} to 1
+		while {minigame::game::status} = "started":
+			set {_timer} to {minigame::ingametime}
+			if {_timer} < (({@gameTimePeriod}/100) * 50):
+				if {_phase} < 2:
+					broadcast "{@prefix}Phase 2"
+					set {_speed} to 10 seconds
+					set {_phase} to 2
+			if {_timer} < (({@gameTimePeriod}/100) * 10):
+				if {_phase} < 3:
+					broadcast "{@prefix}End phase"
+					set {_speed} to 8 seconds
+					set {_phase} to 3
+			set {_amountSpawned} to 0
+			loop all blocks within {_loc1} and {_loc2}:
+				chance of 1%:
+					summon zombie at location of loop-block
+					set {_armor::*} to diamond chestplate, iron chestplate, golden chestplate, netherite chestplate and leather tunic
+					set {_armor} to random element out of {_armor::*}
+					make last spawned entity wear {_armor}
+			wait {_speed}
+	else if {_disaster} = "lightning":
+		set {_speed} to 5 seconds
+		set {_x} to x-pos of {_loc1}
+		set {_y} to y-pos of {_loc2}
+		set {_z} to z-pos of {_loc1}
+		set {_loc1} to location({_x},{_y},{_z}, world "%world of {_loc1}%")
+		set {_phase} to 1
+		while {minigame::game::status} = "started":
+			set {_timer} to {minigame::ingametime}
+			if {_timer} < (({@gameTimePeriod}/100) * 50):
+				if {_phase} < 2:
+					broadcast "{@prefix}Phase 2"
+					set {_speed} to 3 seconds
+					set {_phase} to 2
+			if {_timer} < (({@gameTimePeriod}/100) * 10):
+				if {_phase} < 3:
+					broadcast "{@prefix}End phase"
+					set {_speed} to 1 seconds
+					set {_phase} to 3
+			loop all blocks within {_loc1} and {_loc2}:
+				chance of 1%:
+					strike lightning at highest block at loop-block
+			wait {_speed}
+	else if {_disaster} = "pvp":
+		loop {minigame::ingame::*}:
+			set {_sword} to unbreakable wood sword named "&cSword"
+			give ("%loop-value%" parsed as player) {_sword}
+	else if {_disaster} = "lava":
+		set {_loc1} to {minigame::loc1}
+		set {_loc2} to {minigame::loc2}
+		set y pos of {_loc1} to min(y-pos of {_loc1},y-pos of {_loc2})
+		set y pos of {_loc1} to min(y-pos of {_loc1},y-pos of {_loc2})
+		loop all blocks within {_loc1} and {_loc2}:
+			if {minigame::game::status} = "started":
+				if {_y} is not set:
+					set {_y} to y pos of loop-block
+				if {_y} = y pos of location at loop-block:
+					add location of loop-block to {_lavaAt::*}
+				else:
+					while {_l} > 0:
+						subtract 1 from {_l}
+						set {_lava} to "lava[level=%{_l}%]" parsed as blockdata
+						loop {_lavaAt::*}:
+							set block at loop-value-2 to {_lava}
+						wait 10 tick
+					set {_l} to 7
+					set {_y} to y pos of loop-block
+					wait 2 seconds
+			else:
+				stop loop
+			
+command /endgame:
+	trigger:
+		if name of player is "crazymarty1":
+			endMinigame()
+		else if player has permission "minigame.admin":
+			endMinigame()
+	
+on falling block land:
+	if event-entity is falling southward unbroken anvil or falling southward chipped anvil:
+		if block below event-entity is not bedrock:
+			set block below event-entity to air
+			wait a tick
+			set event-block to air
+		else:
+			wait a tick
+			set event-block to air
+	else if event-entity is falling tnt:
+		set {_entity} to event-entity
+		clear event-entity
+		wait a tick
+		set event-block to air
+		create an explosion of force 2 at {_entity}
+		
+
+command /resetminigame:
+	trigger:
+		if player has permission "minigame.admin":
+			delete {minigame::loc1}
+			delete {minigame::loc2}
+			delete {minigame::game::status}
+			delete {minigame::inspectate::*}
+			delete {minigame::ingame::*}
+			delete {minigame::mapWon}
+			delete {minigame::disasterWon}
+			delete {minigame::spawn}
+			delete {minigame::grace}
+			delete {minigame::lastgametime}
+			delete {minigame::ingametime}
+			delete {minigame::queue::*}
+
+on pickup:
+	if {minigame::ingame::*} contains player:
+		cancel event
+		clear event-dropped item
+		
+on damage:
+	victim is a player
+	attacker is a player
+	if {minigame::game::status} != "started":
+		cancel event
+		send "{@prefix}Pvp is not allowed at the moment." to attacker
+	else:
+		if {minigame::grace} is true:
+			cancel event
+			send "{@prefix}Wait for the disaster to strike" to attacker
+		else:
+			if {minigame::disasterWon} != "pvp":
+				set damage to 0
+			
+on damage:
+	victim is a mob
+	damage cause is fall
+	if block below victim is not bedrock:
+		set block below victim to air
+	else:
+		clear victim
+	cancel event
+				
+function healPlayer(p: player):
+	extinguish {_p}
+	remove all potion effects from {_p}
+	heal {_p}
+	feed {_p}
+	
+on placeholderapi placeholder request for the prefix "minigame":
+	if the identifier is "wins":
+		set the result to "%{minigamesWon::%uuid of player%} ? 0%"
+	else if the identifier is "loss":
+		set the result to "%{minigamesLost::%uuid of player%} ? 0%"
+	else if the identifier is "winstreak":
+		set the result to "%{minigamesWinStreak::%uuid of player%} ? 0%"

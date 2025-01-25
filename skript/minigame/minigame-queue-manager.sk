@@ -1,0 +1,167 @@
+options:
+	prefix: &8[&dMinigame&8] &f
+	noPerms: &cYou don't have permission to do that.
+	# Countdown seconds for players less than 4
+	# all numbers below are in seconds.
+	startAtLessThan4: 30
+	startAt4OrMore: 15 
+	nextGameStart: 45
+	
+command /leavequeue:
+	aliases: leave,leaveq, lq
+	trigger:
+		if {minigame::game::status} = "started":
+			if {minigame::ingame::*} contains player:
+				removePlayerFromGame(player)
+				teleport player to location(10214.5, 78, 10078.5, world "boxpvp")
+				stop
+			send "{@prefix}You are not in a game."
+			stop
+		if {minigame::queue::*} does not contain player:
+			send "{@prefix}You are not in the queue"
+			stop
+		if {minigame::cooldown} < 2:
+			stop
+		send "{@prefix}You left the queue..."
+		remove player from {minigame::queue::*}
+		remove player from {minigameBossBar}
+		startMinigameCountdown()
+		
+command /joinqueue:
+	aliases: join, joinq, jq, queue, q
+	trigger:
+		if {minigame::queue::*} contains player:
+			send "{@prefix}You are already in the queue."
+			stop
+		if {minigame::game::players::*} contains player:
+			send "{@prefix}You are already in a game."
+			stop
+		if {minigame::game::status} = "started":
+			send "{@prefix}The game has already started, you can spectate the game using &8/&bspectate&7."
+			stop
+		send "{@prefix}You have joined the minigame."
+		add player to {minigame::queue::*}
+		add player to {minigameBossBar}
+		startMinigameCountdown()
+		
+command /spectate:
+	trigger:
+		if {minigame::game::status} = "started":
+			spectateGame(player)
+	
+on script load:
+#	delete {minigame::*}
+	set {minigame::game::status} to "waiting"
+	delete {showLobbyBossBar}
+	delete {minigame::incooldown}
+	wait a second
+	set {showLobbyBossBar} to true
+	startMinigameCountdown()
+	showBossBar()
+
+on disconnect:
+	if {minigame::game::status} != "started":
+		if {minigame::queue::*} contains player:
+			remove player from {minigame::queue::*}
+			startMinigameCountdown()
+	
+function startMinigameCountdown():
+	if (size of {minigame::queue::*} ? 0) <= 1:
+		if {minigame::game::status} != "cooldown":
+			set {minigame::game::status} to "waiting"
+			endVoting()
+			stop
+	if size of {minigame::queue::*} >= 2:
+		if size of {minigame::queue::*} < 4:
+			if {minigame::game::status} is not "starting":
+				if {minigame::incooldown} is not set:
+					set {minigame::cooldown} to {@startAtLessThan4}
+					set {minigame::game::status} to "starting"
+					startVoting()
+	if size of {minigame::queue::*} >= 4:
+		if {minigame::cooldown} > {@startAt4OrMore}:
+			if {minigame::incooldown} is not set:
+				set {minigame::cooldown} to {@startAt4OrMore}
+				set {minigame::game::status} to "starting"
+	if (difference between now and {minigame::lastgametime} ? 45 seconds) < 45 seconds:
+		if {minigame::incooldown} is not set:
+			set {minigame::incooldown} to true
+			set {minigame::cooldown} to {@nextGameStart}
+			set {minigame::game::status} to "cooldown"
+
+function showBossBar():
+	while {showLobbyBossBar} is set:
+		if {minigameBossBar} is not set:
+			set {minigameBossBar} to boss bar with id "minigameBossBar" with title "&aWaiting for players..." with color pink with progress 100
+			set bar style of {minigameBossBar} to solid bar
+		if {minigame::game::status} = "waiting":
+			if bar title of {minigameBossBar} is not "&aWaiting for players...":
+				delete {_max}
+				delete {_min}
+				set bar title of {minigameBossBar} to "&aWaiting for players..."
+				set bar color of {minigameBossBar} to pink
+				set bar progress of {minigameBossBar} to 100
+		else if {minigame::game::status} = "starting":
+			if bar title of {minigameBossBar} does not contain "Game starting in":
+				set {_max} to {minigame::cooldown}*20
+				set {_min} to {minigame::cooldown}*20
+				set bar progress of {minigameBossBar} to 100
+			if {minigame::cooldown} = 0:
+				set {minigame::game::status} to "started"
+			if {_n} = 20:
+				subtract 1 from {minigame::cooldown}
+				if {minigame::cooldown} < 6:
+					playStartingSound()
+				set {_n} to 0
+			else:
+				add 1 to {_n}
+			if {minigame::cooldown} < 6:
+				if {minigame::mapWon} and {minigame::disasterWon} is not set:
+					set {_votes::*} to sorted indices of {selectedMapVotes::*} in descending order
+					set {_won} to first element out of {_votes::*}
+					if {_won} is not set:
+						set {_won} to random element out of {minigame::maps::*}
+					set {_votes} to {selectedMapVotes::%{_won}%} ? 0
+					set {minigame::mapWon} to {_won}
+					
+					set {_votes::*} to sorted indices of {selectedDisasterVotes::*} in descending order
+					set {_won} to first element out of {_votes::*}
+					if {_won} is not set:
+						set {_won} to random element out of {minigame::disasters::*}
+					set {_votes} to {selectedDisasterVotes::%{_won}%} ? 0
+					set {minigame::disasterWon} to {_won}
+					
+					broadcast "{@prefix}Voting has ended."
+					broadcast "{@prefix}Map &b%{minigame::mapWon}% &fwon with the most votes &8(&a%{_votes}%&8)"
+					broadcast "{@prefix}Disaster &b%{minigame::disasterWon}% &fwon with the most votes &8(&a%{_votes}%&8)"
+					endVoting()
+			subtract 1 from {_min}
+			set {_percent} to rounded up ({_min}/{_max}) * 100
+			set bar title of {minigameBossBar} to "&eGame starting in &e%{minigame::cooldown}% seconds"
+			set bar progress of {minigameBossBar} to {_percent}
+		else if {minigame::game::status} = "cooldown":
+			if {_min} is not set:
+				set {_max} to {minigame::cooldown}*20
+				set {_min} to {minigame::cooldown}*20
+			#if {minigame::incooldown} is not set:
+			if {minigame::cooldown} < 1:
+				delete {minigame::incooldown}
+				delete {_max}
+				delete {_min}
+				set bar progress of {minigameBossBar} to 100
+				wait a tick
+				startMinigameCountdown()
+			if {_n} = 20:
+				subtract 1 from {minigame::cooldown}
+				set {_n} to 0
+			else:
+				add 1 to {_n}
+			subtract 1 from {_min}
+			set {_percent} to ({_min}/{_max}) * 100
+			set bar title of {minigameBossBar} to "&eNext game starts in &e%{minigame::cooldown}%"
+			set bar progress of {minigameBossBar} to {_percent}	
+		else if {minigame::game::status} = "started":
+			delete {showLobbyBossBar}
+			startMinigame()
+		wait a tick
+
