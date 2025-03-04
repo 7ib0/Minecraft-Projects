@@ -28,7 +28,7 @@ public class Bossplugin extends JavaPlugin implements Listener {
     private Set<UUID> angeredBosses = new HashSet<>();
     private Random random = new Random();
 
-    // Configurable values
+
     private double bossMaxHealth = 100.0;
     private int bossStrengthLevel = 0;
     private int bossSpeedLevel = 0;
@@ -45,7 +45,7 @@ public class Bossplugin extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         getLogger().info("BossPlugin enabled!");
 
-        // Register commands
+
         getCommand("boss").setExecutor(this);
     }
 
@@ -84,37 +84,37 @@ public class Bossplugin extends JavaPlugin implements Listener {
         Location spawnLocation = player.getLocation();
         WitherSkeleton bossEntity = (WitherSkeleton) spawnLocation.getWorld().spawnEntity(spawnLocation, EntityType.WITHER_SKELETON);
 
-        // Apply boss attributes
+
         bossEntity.setCustomName(ChatColor.RED + "§lBoss");
         bossEntity.setCustomNameVisible(true);
         bossEntity.setMaxHealth(bossMaxHealth);
         bossEntity.setHealth(bossMaxHealth);
 
-        // Equipment with enchantments
+
         ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
         bossEntity.getEquipment().setItemInMainHand(sword);
 
         ItemStack helmet = new ItemStack(Material.DIAMOND_HELMET);
         bossEntity.getEquipment().setHelmet(helmet);
 
-        // Similar enchantments for other armor pieces...
+
         bossEntity.getEquipment().setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
         bossEntity.getEquipment().setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
         bossEntity.getEquipment().setBoots(new ItemStack(Material.DIAMOND_BOOTS));
 
-        // Set drop chances
+
         bossEntity.getEquipment().setHelmetDropChance(0);
         bossEntity.getEquipment().setChestplateDropChance(0);
         bossEntity.getEquipment().setLeggingsDropChance(0);
         bossEntity.getEquipment().setBootsDropChance(0);
         bossEntity.getEquipment().setItemInMainHandDropChance(0);
 
-        // Apply effects
+
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, bossStrengthLevel));
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, bossSpeedLevel));
         bossEntity.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, Integer.MAX_VALUE, 0));
 
-        // Create boss bar
+
         BossBar bossBar = Bukkit.createBossBar(
                 ChatColor.GOLD + "§lBoss",
                 BarColor.RED,
@@ -124,7 +124,7 @@ public class Bossplugin extends JavaPlugin implements Listener {
         Bukkit.getOnlinePlayers().forEach(bossBar::addPlayer);
         bossBars.put(bossEntity.getUniqueId(), bossBar);
 
-        // Spawn effects
+
         World world = spawnLocation.getWorld();
         if (world != null) {
             world.strikeLightningEffect(spawnLocation);
@@ -143,7 +143,7 @@ public class Bossplugin extends JavaPlugin implements Listener {
                 Location bossLoc = boss.getLocation();
                 World world = boss.getWorld();
 
-                // Get nearest player for targeting
+
                 Player target = getNearestPlayer(boss);
                 if (target != null) {
                     boss.setTarget(target);
@@ -217,7 +217,7 @@ public class Bossplugin extends JavaPlugin implements Listener {
                 event.getEntity().getCustomName().contains("Boss")) {
             Player killer = event.getEntity().getKiller();
             if (killer != null) {
-                // Enhanced rewards
+
                 killer.getInventory().addItem(
                         new ItemStack(Material.DIAMOND_BLOCK, 5),
                         new ItemStack(Material.NETHERITE_INGOT, 2),
@@ -227,7 +227,7 @@ public class Bossplugin extends JavaPlugin implements Listener {
 
                 event.setDroppedExp(1000);
 
-                // Victory effects
+
                 World world = killer.getWorld();
                 Location loc = killer.getLocation();
                 world.strikeLightningEffect(loc);
@@ -261,7 +261,7 @@ public class Bossplugin extends JavaPlugin implements Listener {
         if (event.getEntity() instanceof WitherSkeleton) {
             WitherSkeleton boss = (WitherSkeleton) event.getEntity();
             if (boss.getCustomName() != null && boss.getCustomName().contains("Boss")) {
-                // Cancel environmental damage
+
                 if (event.getCause() == EntityDamageEvent.DamageCause.FALL ||
                         event.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION ||
                         event.getCause() == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION) {
@@ -272,10 +272,10 @@ public class Bossplugin extends JavaPlugin implements Listener {
                     return;
                 }
 
-                // Update boss bar
+
                 updateBossBar(boss, event.getFinalDamage());
 
-                // Check for anger mode
+
                 checkAngerMode(boss, event.getFinalDamage());
             }
         }
@@ -295,23 +295,23 @@ public class Bossplugin extends JavaPlugin implements Listener {
         if (healthPercentage <= angerThreshold && !angeredBosses.contains(boss.getUniqueId())) {
             angeredBosses.add(boss.getUniqueId());
 
-            // Anger mode announcement
+
             Bukkit.broadcastMessage(ChatColor.DARK_RED + "§l⚠ THE BOSS HAS ENTERED RAGE MODE! ⚠");
 
-            // Enhanced abilities
+
             boss.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, bossStrengthLevel + 1));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, bossSpeedLevel + 1));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 0));
             boss.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, 0));
 
-            // Visual effects
+
             World world = boss.getWorld();
             Location loc = boss.getLocation();
             world.strikeLightningEffect(loc);
             world.playSound(loc, Sound.ENTITY_WITHER_AMBIENT, 2.0f, 0.5f);
             world.spawnParticle(Particle.FLAME, loc, 100, 1, 1, 1, 0.1);
 
-            // Update boss bar
+
             if (bossBars.containsKey(boss.getUniqueId())) {
                 BossBar bossBar = bossBars.get(boss.getUniqueId());
                 bossBar.setColor(BarColor.PURPLE);
