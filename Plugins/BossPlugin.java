@@ -6,6 +6,7 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -28,25 +29,40 @@ public class Bossplugin extends JavaPlugin implements Listener {
     private Set<UUID> angeredBosses = new HashSet<>();
     private Random random = new Random();
 
-
-    private double bossMaxHealth = 100.0;
-    private int bossStrengthLevel = 0;
-    private int bossSpeedLevel = 0;
-    private float explosionPower = 2.0f;
-    private int angerThreshold = 25;
-    private int fireballChance = 30;
-    private int arrowChance = 25;
-    private int jumpChance = 35;
-    private double jumpHeight = 3.0;
-    private int attackInterval = 35;
+    private double bossMaxHealth;
+    private int bossStrengthLevel;
+    private int bossSpeedLevel;
+    private float explosionPower;
+    private int angerThreshold;
+    private int fireballChance;
+    private int arrowChance;
+    private int jumpChance;
+    private double jumpHeight;
+    private int attackInterval;
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
+        loadConfig();
         getServer().getPluginManager().registerEvents(this, this);
         getLogger().info("BossPlugin enabled!");
 
 
         getCommand("boss").setExecutor(this);
+    }
+
+    private void loadConfig() {
+        FileConfiguration config = getConfig();
+        bossMaxHealth = config.getDouble("boss.maxHealth", 100.0);
+        bossStrengthLevel = config.getInt("boss.strengthLevel", 0);
+        bossSpeedLevel = config.getInt("boss.speedLevel", 0);
+        explosionPower = (float) config.getDouble("boss.explosionPower", 2.0);
+        angerThreshold = config.getInt("boss.angerThreshold", 25);
+        fireballChance = config.getInt("boss.attacks.fireballChance", 30);
+        arrowChance = config.getInt("boss.attacks.arrowChance", 25);
+        jumpChance = config.getInt("boss.attacks.jumpChance", 35);
+        jumpHeight = config.getDouble("boss.attacks.jumpHeight", 3.0);
+        attackInterval = config.getInt("boss.attackInterval", 35);
     }
 
     @Override
