@@ -1,3 +1,4 @@
+// includes: /npc create <entity>, creates an npc who gives you a quest
 package me.tibo.npcplugin;
 
 import org.bukkit.Bukkit;
@@ -75,7 +76,7 @@ public class Npcplugin extends JavaPlugin implements TabExecutor, Listener {
             npc.setPersistent(true);
             npc.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, Integer.MAX_VALUE, 1, false, false));
 
-            // Prevent movement
+            
             npc.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(1.0);
             npc.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.0);
 
