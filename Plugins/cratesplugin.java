@@ -16,13 +16,15 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.scheduler.BukkitRunnable;
+
 import java.util.*;
 
-public class CratesPlugin extends JavaPlugin implements Listener {
+public class Cratesplugin extends JavaPlugin implements Listener {
 
     private Map<Location, List<ItemStack>> crateLocations = new HashMap<>();
     private Map<UUID, Long> cooldowns = new HashMap<>();
-    private final long COOLDOWN_TIME = 300000; 
+    private final long COOLDOWN_TIME = 300000;
 
     private FileConfiguration config;
 
@@ -31,7 +33,7 @@ public class CratesPlugin extends JavaPlugin implements Listener {
         getLogger().info("CratesPlugin enabled!");
         getServer().getPluginManager().registerEvents(this, this);
         getCommand("createcrate").setExecutor(this);
-        
+
         saveDefaultConfig();
         config = getConfig();
         loadCrates();
@@ -47,11 +49,11 @@ public class CratesPlugin extends JavaPlugin implements Listener {
         if (config.contains("crates")) {
             for (String locationStr : config.getConfigurationSection("crates").getKeys(false)) {
                 String[] coords = locationStr.split(",");
-                Location loc = new Location(getServer().getWorld(coords[0]), 
-                    Double.parseDouble(coords[1]), 
-                    Double.parseDouble(coords[2]), 
-                    Double.parseDouble(coords[3]));
-                
+                Location loc = new Location(getServer().getWorld(coords[0]),
+                        Double.parseDouble(coords[1]),
+                        Double.parseDouble(coords[2]),
+                        Double.parseDouble(coords[3]));
+
                 List<ItemStack> rewards = (List<ItemStack>) config.getList("crates." + locationStr);
                 crateLocations.put(loc, rewards);
             }
@@ -61,10 +63,10 @@ public class CratesPlugin extends JavaPlugin implements Listener {
     private void saveCrates() {
         for (Map.Entry<Location, List<ItemStack>> entry : crateLocations.entrySet()) {
             Location loc = entry.getKey();
-            String locationStr = loc.getWorld().getName() + "," + 
-                               loc.getX() + "," + 
-                               loc.getY() + "," + 
-                               loc.getZ();
+            String locationStr = loc.getWorld().getName() + "," +
+                    loc.getX() + "," +
+                    loc.getY() + "," +
+                    loc.getZ();
             config.set("crates." + locationStr, entry.getValue());
         }
         saveConfig();
@@ -114,14 +116,14 @@ public class CratesPlugin extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        
+
         Block clickedBlock = event.getClickedBlock();
         if (clickedBlock == null || clickedBlock.getType() != Material.CHEST) return;
-        
+
         if (crateLocations.containsKey(clickedBlock.getLocation())) {
             event.setCancelled(true);
             Player player = event.getPlayer();
-            
+
             if (cooldowns.containsKey(player.getUniqueId())) {
                 long timeLeft = (cooldowns.get(player.getUniqueId()) + COOLDOWN_TIME - System.currentTimeMillis()) / 1000;
                 if (timeLeft > 0) {
@@ -129,7 +131,7 @@ public class CratesPlugin extends JavaPlugin implements Listener {
                     return;
                 }
             }
-            
+
             openCrate(player, clickedBlock.getLocation());
         }
     }
@@ -142,11 +144,11 @@ public class CratesPlugin extends JavaPlugin implements Listener {
         }
 
         player.sendMessage(ChatColor.GREEN + "Opening crate...");
-        
+
         new BukkitRunnable() {
             int ticks = 0;
             Random random = new Random();
-            
+
             @Override
             public void run() {
                 if (ticks >= 20) {
@@ -154,16 +156,16 @@ public class CratesPlugin extends JavaPlugin implements Listener {
                     player.getInventory().addItem(reward);
                     player.sendMessage(ChatColor.GREEN + "You won: " + reward.getItemMeta().getDisplayName());
                     player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
-                    
+
                     cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
                     cancel();
                     return;
                 }
-                
+
                 ItemStack displayItem = rewards.get(random.nextInt(rewards.size()));
                 player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
                 player.sendTitle("", ChatColor.GOLD + "Rolling...", 0, 10, 0);
-                
+
                 ticks++;
             }
         }.runTaskTimer(this, 0L, 1L);
