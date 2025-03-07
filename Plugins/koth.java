@@ -1,3 +1,4 @@
+// simple koth plugin
 package me.Tibo.koth;
 
 import org.bukkit.*;
