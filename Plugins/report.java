@@ -1,3 +1,4 @@
+// report plugin that lets players report players or messages a player send, these will be stored and can be sen by staff
 package me.Tibo.ReportPlugin;
 
 import org.bukkit.Bukkit;
