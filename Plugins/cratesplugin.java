@@ -1,3 +1,4 @@
+// plugin that lets you turn a chest into a crate, you can also change the prizes
 package me.tibo.cratesplugin;
 
 import org.bukkit.*;
