@@ -1,3 +1,4 @@
+// simple set home plugin
 package me.Tibo.sethome;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
