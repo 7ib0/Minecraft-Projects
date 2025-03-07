@@ -1,3 +1,4 @@
+//combat plugin that punishes player when he logs of in combat and prevents commands in combat
 package me.Tibo.combat;
 
 import org.bukkit.Bukkit;
