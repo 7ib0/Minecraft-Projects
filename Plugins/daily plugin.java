@@ -1,4 +1,4 @@
-// uses a gui and a config.yml
+// daily gui
 package com.example.dailyplugin;
 
 import org.bukkit.Bukkit;
