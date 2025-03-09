@@ -1,6 +1,6 @@
 // includes: /pay, /balance, /ah, /ah sell
 package me.tibo.economy;
-
+ 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
