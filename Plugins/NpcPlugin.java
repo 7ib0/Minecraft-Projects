@@ -1,6 +1,6 @@
 // includes: /npc create <entity>, creates an npc who gives you a quest
 package me.tibo.npcplugin;
-
+ 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Location;
