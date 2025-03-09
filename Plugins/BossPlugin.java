@@ -1,6 +1,6 @@
 //includes: boss that does random attacks such as: jumping in the air and an explosion when he lands, mellee, fireballs, arrows...
 package me.tibo.bossplugin;
-
+ 
 import org.bukkit.*;
 import org.bukkit.boss.BossBar;
 import org.bukkit.boss.BarColor;
