@@ -1,6 +1,6 @@
 // a plugin that links 2 players, they share their health and potions
 package me.tibo.soulLink;
-
+ 
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.command.Command;
