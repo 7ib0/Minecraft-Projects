@@ -1,0 +1,58 @@
+command /event:
+    description: Teleports the player to the events warp if their inventory is empty
+    usage: /event
+    trigger:
+        if player's inventory is empty:
+            send "&aYou are about to be teleported to the event warp!" to player
+            execute console command "warp event %player%"
+        else:
+            send "&cYou must have an empty inventory to use this command." to player
+			
+on damage:
+	if "%region at victim%" contains "ffaarena":
+		if {ffa} is false:
+			cancel event
+			
+command /ffastart:
+	permission: op
+	trigger:
+		loop all players:
+			if "%region at loop-player%" contains "ffaspawn":
+				give loop-player unbreakable iron helmet of curse of vanishing
+				give loop-player unbreakable iron chestplate of curse of vanishing
+				give loop-player unbreakable iron leggings of curse of vanishing
+				give loop-player unbreakable iron boots of curse of vanishing
+				give loop-player unbreakable iron sword of curse of vanishing
+				give loop-player unbreakable iron axe of curse of vanishing
+				give loop-player shield
+				give loop-player {steak}
+				give loop-player 4 of golden apple
+		broadcast "&l[FFA]&l&aPvp will be turned on in 10 seconds"
+		wait 10 seconds
+		set {ffa} to true
+		broadcast "&l[FFA]&l&cPvp is turned on"
+		
+command /ffastop:
+	permission: op
+	trigger:
+		broadcast "&l[FFA]&l&cPvp is now turned off."
+		set {ffa} to false
+		
+command /ffatest:
+	trigger:
+		loop all players:
+			if "%region at loop-player%" contains "ffaspawn":
+				give loop-player unbreakable iron helmet of curse of vanishing
+				give loop-player unbreakable iron chestplate of curse of vanishing
+				give loop-player unbreakable iron leggings of curse of vanishing
+				give loop-player unbreakable iron boots of curse of vanishing
+				give loop-player unbreakable iron sword of curse of vanishing
+				give loop-player unbreakable iron axe of curse of vanishing
+				give loop-player shield
+				give loop-player {steak}
+				give loop-player 4 of golden apple
+				
+on command "/spawn":
+	if "%region at player%" contains "ffaarena":
+		clear player's inventory
+	

@@ -1,0 +1,3 @@
+on command "/buy":
+	cancel event
+	execute console command "/craftingstore:buy

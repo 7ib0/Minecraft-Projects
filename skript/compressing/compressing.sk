@@ -1,0 +1,8 @@
+command /compress:
+	cooldown: 1 seconds
+	trigger:
+		if player's held item is diamond:
+			if player's inventory contains "64 of diamond" parsed as itemtype:
+				remove 64 of diamond from player
+				give enchanted diamond block named "<##24bbd5>compressed diamond block" to player
+

@@ -1,0 +1,10 @@
+command /rtp:
+	cooldown: 30 seconds
+	cooldown message: &cYou can only teleport to a random location every 30 seconds.
+	trigger:
+		set {_x} to round(random number between -100000 and 100000)
+		set {_z} to round(random number between -100000 and 100000)
+		set {_y} to highest solid block at location({_x}, 0, {_z}, world "world")
+		set {_block} to block at location at ({_x}, 0, {_z}) in world event-world
+		teleport player to highest solid block at location({_x}, 0, {_z}, world "world")
+		send subtitle "&aTeleported you to &a&l&x:%{_x}% y:%{_y}% z:%{_z}%" to player for 3 seconds

@@ -1,0 +1,56 @@
+
+command /autocompress:
+    trigger:
+        if {AutoC::Enabled::%player's uuid%} is set:
+            clear {AutoC::Enabled::%player's uuid%}
+            send "&cAuto compression &lDISABLED!"
+            play sound "ui.button.click" to player
+        else:
+            set {AutoC::Enabled::%player's uuid%} to true
+            send "&aAuto compression &lENABLED!"
+            play sound "ui.button.click" to player
+
+on pickup of coal, raw iron, raw gold, raw copper, redstone, lapis lazuli, diamond, emerald:
+    if {AutoC::Enabled::%player's uuid%} is set:
+        wait 2 ticks
+        loop {AutoC::Compressors::*}:
+            set {_ore} to {AutoC::Compressors::%loop-value%::Compresses}
+            set {_block} to {AutoC::Compressors::%loop-value%::Becomes}
+            set {_amount} to amount of {_ore} in player's inventory
+            
+            if {_amount} >= 9:
+                set {_compressed} to floor({_amount} / 9)
+                remove ({_compressed} * 9) of {_ore} from player's inventory
+                give player {_compressed} of {_block}
+                send action bar "&bCompressed %{_ore}% into %{_block}%!"
+
+function registerCompressors():
+    clear {AutoC::Compressors::*}
+
+    set {AutoC::Compressors::"Coal"::Compresses} to coal
+    set {AutoC::Compressors::"Coal"::Becomes} to coal block
+
+    set {AutoC::Compressors::"Iron"::Compresses} to raw iron
+    set {AutoC::Compressors::"Iron"::Becomes} to iron block
+
+    set {AutoC::Compressors::"Gold"::Compresses} to raw gold
+    set {AutoC::Compressors::"Gold"::Becomes} to gold block
+
+    set {AutoC::Compressors::"Copper"::Compresses} to raw copper
+    set {AutoC::Compressors::"Copper"::Becomes} to copper block
+
+    set {AutoC::Compressors::"Redstone"::Compresses} to redstone
+    set {AutoC::Compressors::"Redstone"::Becomes} to redstone block
+
+    set {AutoC::Compressors::"Lapis"::Compresses} to lapis lazuli
+    set {AutoC::Compressors::"Lapis"::Becomes} to lapis block
+
+    set {AutoC::Compressors::"Diamond"::Compresses} to diamond
+    set {AutoC::Compressors::"Diamond"::Becomes} to diamond block
+
+    set {AutoC::Compressors::"Emerald"::Compresses} to emerald
+    set {AutoC::Compressors::"Emerald"::Becomes} to emerald block
+
+
+on script load:
+    registerCompressors()

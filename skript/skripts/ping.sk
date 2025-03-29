@@ -1,0 +1,18 @@
+on chat:
+	loop all players:
+		if message contains "%loop-player%":
+			replace "%loop-player%" with "&e@%loop-player%&f" in message
+			if {pingsound::%loop-player's uuid%} is not set:
+				set {pingsound::%loop-player's uuid%} to true
+			
+			if {pingsound::%loop-player's uuid%} is true:
+				play sound "entity.experience_orb.pickup" with volume 0.5 and pitch 1 to loop-player
+				
+command /togglepingsound:
+	trigger:
+		if {pingsound::%player's uuid%} is false:
+			set {pingsound::%player's uuid%} to true
+			send "&aYou enabled the Ping Sound!"
+		else if {pingsound::%player's uuid%} is true:
+			set {pingsound::%player's uuid%} to false
+			send "&cYou disabled the Ping Sound!"
