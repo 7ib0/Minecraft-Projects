@@ -1,3 +1,4 @@
+// simple koth plugin
 package me.Tibo.koth;
 
 import org.bukkit.*;
@@ -17,6 +18,7 @@ public final class Bounty extends JavaPlugin implements Listener {
     private int hillRadius = 10;
     private final HashMap<UUID, Integer> playerPoints = new HashMap<>();
     private final List<Player> playersInZone = new ArrayList<>();
+    private final Map<UUID, Integer> killStreak = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -24,31 +26,63 @@ public final class Bounty extends JavaPlugin implements Listener {
 
         getCommand("koth").setExecutor((sender, command, label, args) -> {
             if (args.length < 1) {
-                sender.sendMessage("/koth start | /koth stop");
+                sender.sendMessage(ChatColor.YELLOW + "Usage: /koth <start|stop>");
                 return true;
             }
 
             if (args[0].equalsIgnoreCase("start") && sender instanceof Player) {
+                if (eventActive) {
+                    sender.sendMessage(ChatColor.RED + "Event is already running!");
+                    return true;
+                }
+
                 Player player = (Player) sender;
-                hillCenter = new Location(player.getWorld(), 10, 64, 10); // Fixed coordinates for the KOTH area
-                hillRadius = 10; // Default radius
+                hillCenter = player.getLocation();
                 playerPoints.clear();
                 playersInZone.clear();
+                killStreak.clear();
                 eventActive = true;
 
-                Bukkit.broadcastMessage(ChatColor.GREEN + "Koth has started");
+                Bukkit.broadcastMessage(ChatColor.GREEN + "KOTH has started at " + 
+                    String.format("X: %d, Y: %d, Z: %d", 
+                    hillCenter.getBlockX(), 
+                    hillCenter.getBlockY(), 
+                    hillCenter.getBlockZ()));
+                
                 startPointTask();
                 return true;
             }
 
             if (args[0].equalsIgnoreCase("stop")) {
+                if (!eventActive) {
+                    sender.sendMessage(ChatColor.RED + "No event is running!");
+                    return true;
+                }
+
+                UUID winner = findCurrentLeader();
+                if (winner != null) {
+                    Player winningPlayer = Bukkit.getPlayer(winner);
+                    if (winningPlayer != null) {
+                        Bukkit.broadcastMessage(ChatColor.GOLD + winningPlayer.getName() + 
+                            " wins with " + playerPoints.get(winner) + " points!");
+                    }
+                }
+
                 eventActive = false;
-                Bukkit.broadcastMessage(ChatColor.RED + "Koth has ended");
+                Bukkit.broadcastMessage(ChatColor.RED + "KOTH has ended");
                 return true;
             }
 
             return false;
         });
+    }
+
+    private UUID findCurrentLeader() {
+        return playerPoints.entrySet()
+            .stream()
+            .max(Map.Entry.comparingByValue())
+            .map(Map.Entry::getKey)
+            .orElse(null);
     }
 
     private void startPointTask() {
@@ -66,7 +100,7 @@ public final class Bounty extends JavaPlugin implements Listener {
                     int newPoints = currentPoints + 1;
                     playerPoints.put(playerUUID, newPoints);
 
-                    if (newPoints % 10 == 0) { // Announce every 10 points
+                    if (newPoints % 10 == 0) {
                         Bukkit.broadcastMessage(ChatColor.YELLOW + player.getName() + " has reached " + newPoints + " points!");
                     }
                 }
