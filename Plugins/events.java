@@ -238,7 +238,7 @@ public class Events extends JavaPlugin implements Listener {
         host.teleport(ffaArea);
         host.getInventory().clear();
         ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
-        sword.addEnchantment(Enchantment.SHARPNESS, 2);  // Using Enchantment.DAMAGE_ALL instead of SHARPNESS
+        sword.addEnchantment(Enchantment.SHARPNESS, 2); 
         host.getInventory().addItem(sword);
 
         startCountdown();
@@ -267,13 +267,13 @@ public class Events extends JavaPlugin implements Listener {
             player.teleport(spleefArea);
             player.getInventory().clear();
             ItemStack shovel = new ItemStack(Material.DIAMOND_SHOVEL);
-            shovel.addEnchantment(Enchantment.EFFICIENCY, 5);  // Using Enchantment.DIG_SPEED instead of EFFICIENCY 
+            shovel.addEnchantment(Enchantment.EFFICIENCY, 5); 
             player.getInventory().addItem(shovel);
         } else if (currentEvent.equals("ffa")) {
             player.teleport(ffaArea);
             player.getInventory().clear();
             ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
-            sword.addEnchantment(Enchantment.SHARPNESS, 2);  // Using Enchantment.DAMAGE_ALL instead of SHARPNESS
+            sword.addEnchantment(Enchantment.SHARPNESS, 2);  
             player.getInventory().addItem(sword);
             player.getInventory().setHelmet(new ItemStack(Material.IRON_HELMET));
             player.getInventory().setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
@@ -352,7 +352,7 @@ public class Events extends JavaPlugin implements Listener {
             }
         }
 
-        // Monitor player deaths
+        
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -407,7 +407,7 @@ public class Events extends JavaPlugin implements Listener {
             }
         }
 
-        // Monitor player deaths
+       
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -485,7 +485,7 @@ public class Events extends JavaPlugin implements Listener {
                 player.getInventory().clear();
                 player.setGameMode(GameMode.SURVIVAL);
 
-                // Remove any potion effects
+                
                 for (PotionEffect effect : player.getActivePotionEffects()) {
                     player.removePotionEffect(effect.getType());
                 }
