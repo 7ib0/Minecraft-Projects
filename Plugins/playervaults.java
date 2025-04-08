@@ -1,3 +1,4 @@
+// a playervaults plugin
 package me.tibo.playervaults;
 
 import org.bukkit.plugin.java.JavaPlugin;
