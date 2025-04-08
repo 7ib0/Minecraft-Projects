@@ -1,3 +1,4 @@
+// plugin that lets you edit item's name, enchantments etc.
 package me.tibo.edititem;
 
 import org.bukkit.Bukkit;
