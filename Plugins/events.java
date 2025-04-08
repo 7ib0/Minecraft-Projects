@@ -1,3 +1,4 @@
+//plugin that lets you host events such as: spleef, ffa...
 package me.tibo.events;
 
 import org.bukkit.plugin.java.JavaPlugin;
