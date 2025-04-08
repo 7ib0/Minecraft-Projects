@@ -1,3 +1,4 @@
+// plugin that lets you manage a plyer, opens a gui where you can ban, mute, kick, freeze or tp to the player
 package me.tibo.playermanager;
 
 import org.bukkit.Bukkit;
