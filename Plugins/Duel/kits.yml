@@ -1,0 +1,41 @@
+// auto generates the following kits:
+
+kits:
+  cpvp:
+    icon: DIAMOND_SWORD
+    items:
+    - DIAMOND_SWORD
+    - DIAMOND_HELMET
+    - DIAMOND_CHESTPLATE
+    - DIAMOND_LEGGINGS
+    - DIAMOND_BOOTS
+    - END_CRYSTAL*64
+    - END_CRYSTAL*64
+    - OBSIDIAN*64
+    - OBSIDIAN*64
+    - TOTEM_OF_UNDYING*1
+    - TOTEM_OF_UNDYING*1
+    - TOTEM_OF_UNDYING*1
+    - TOTEM_OF_UNDYING*1
+    - TOTEM_OF_UNDYING*1
+    - TOTEM_OF_UNDYING*1
+    - TOTEM_OF_UNDYING*1
+    - TOTEM_OF_UNDYING*1
+    - TOTEM_OF_UNDYING*1
+    - TOTEM_OF_UNDYING*1
+    - GOLDEN_APPLE*64
+    - RESPAWN_ANCHOR*64
+    - GLOWSTONE*64
+    - DIAMOND_PICKAXE
+    - SHIELD
+    - BOW
+    - ARROW*64
+  swordpvp:
+    icon: IRON_SWORD
+    items:
+    - IRON_SWORD
+    - IRON_HELMET
+    - IRON_CHESTPLATE
+    - IRON_LEGGINGS
+    - IRON_BOOTS
+    - GOLDEN_APPLE*64
