@@ -1,3 +1,5 @@
+auto generates the following arena:
+
 arenas:
   bedrock_box:
     world: world
