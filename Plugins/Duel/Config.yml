@@ -1,0 +1,11 @@
+arenas:
+  bedrock_box:
+    world: world
+    corner1:
+    - 100
+    - 70
+    - 100
+    corner2:
+    - 114
+    - 75
+    - 114
